@@ -1451,6 +1451,7 @@ static enum power_supply_property smb5_usb_props[] = {
 	POWER_SUPPLY_PROP_VOLTAGE_VPH,
 	POWER_SUPPLY_PROP_THERM_ICL_LIMIT,
 	POWER_SUPPLY_PROP_FASTCHARGE_MODE,
+	POWER_SUPPLY_PROP_FFC_ITERM,
 	POWER_SUPPLY_PROP_PD_AUTHENTICATION,
 	POWER_SUPPLY_PROP_SKIN_HEALTH,
 	POWER_SUPPLY_PROP_APSD_RERUN,
@@ -1789,6 +1790,9 @@ static int smb5_usb_set_prop(struct power_supply *psy,
 			schedule_delayed_work(&chg->step_charge_notify_work,
 					msecs_to_jiffies(2000));
 		break;
+	case POWER_SUPPLY_PROP_FFC_ITERM:
+		smblib_set_fastcharge_iterm(chg, val->intval);
+		break;
 	case POWER_SUPPLY_PROP_CURRENT_MAX:
 		smblib_set_prop_input_current_max(chg, val);
 		break;
@@ -1823,6 +1827,7 @@ static int smb5_usb_prop_is_writeable(struct power_supply *psy,
 	case POWER_SUPPLY_PROP_THERM_ICL_LIMIT:
 	case POWER_SUPPLY_PROP_VOLTAGE_MAX_LIMIT:
 	case POWER_SUPPLY_PROP_FASTCHARGE_MODE:
+	case POWER_SUPPLY_PROP_FFC_ITERM:
 	case POWER_SUPPLY_PROP_PD_AUTHENTICATION:
 	case POWER_SUPPLY_PROP_ADAPTER_CC_MODE:
 	case POWER_SUPPLY_PROP_APSD_RERUN:
@@ -3087,8 +3092,7 @@ static int smb5_batt_get_prop(struct power_supply *psy,
 				POWER_SUPPLY_PROP_VOLTAGE_NOW, val);
 		break;
 	case POWER_SUPPLY_PROP_VOLTAGE_MAX:
-		val->intval = get_client_vote(chg->fv_votable,
-					      QNOVO_VOTER);
+		val->intval = get_effective_result(chg->fv_votable);
 		if (val->intval < 0)
 			val->intval = get_client_vote(chg->fv_votable,
 						      BATT_PROFILE_VOTER);
